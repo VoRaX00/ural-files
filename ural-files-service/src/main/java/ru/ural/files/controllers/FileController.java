@@ -26,6 +26,4 @@ public class FileController implements FileApi {
         return ResponseEntity.ok(fileMapper.toDto(savedFiles));
     }
 
-
-
 }
