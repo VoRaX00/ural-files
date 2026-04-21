@@ -1,5 +1,7 @@
 server:
   port: 10907
+  tomcat:
+    max-http-form-post-size: 10485760
 
 spring:
   application:
@@ -19,8 +21,7 @@ spring:
         check_nullability: true
         hbm2ddl:
           auto: validate
-        default_schema: ural_cargo
-
+        default_schema: ural_files
   liquibase:
     enabled: true
     liquibase-schema: public
@@ -28,6 +29,16 @@ spring:
     database-change-log-lock-table: ural_files_lock
     change-log: classpath:db/changelog-master.xml
     default-schema: ural_files
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+minio:
+  bucket: files
+  url: http://localhost:9000
+  access-key: ural
+  secret-key: uralpass
 
 logging:
   level:

@@ -1,11 +1,127 @@
 package ru.ural.files.services;
 
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import ru.ural.exceptions.BadRequestException;
+import ru.ural.exceptions.InternalServerException;
+import ru.ural.files.common.enums.FileType;
+import ru.ural.files.entities.File;
+import ru.ural.files.properties.MinioProperty;
+import ru.ural.files.repositories.FileRepository;
+import ru.ural.models.UserPrincipals;
+import ru.ural.utils.JwtUtils;
+
+import java.io.InputStream;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
+
+    private static final String INVALID_LOAD_INFO = "Количество файлов не соответствует типам";
+
+    private static final String INVALID_FILE = "Не валидный файл";
+
+    private final FileRepository fileRepository;
+
+    private final MinioClient minioClient;
+
+    private final MinioProperty minioProperty;
+
+    // TODO: оптимизировать процесс сохранения файлов в S3
+    @Transactional
+    public List<File> uploadFiles(List<MultipartFile> files, List<FileType> types) {
+        if (files.size() != types.size()) {
+            throw new BadRequestException(INVALID_LOAD_INFO);
+        }
+
+        Authentication authentication = JwtUtils.getAuthentication();
+        UserPrincipals user = JwtUtils.getUser(authentication);
+
+        var entities = new ArrayList<File>();
+
+        IntStream.range(0, files.size()).forEach(i -> {
+            var file = files.get(i);
+            var fileType = types.get(i);
+
+            var entity = processFile(file, fileType, user.getUuid());
+            fileRepository.save(entity);
+        });
+
+        return fileRepository.saveAll(entities);
+    }
+
+    private File processFile(MultipartFile file, FileType type, String userUuid) {
+        var originalFileName = Optional.ofNullable(file.getOriginalFilename())
+                .orElseThrow(() -> new BadRequestException(INVALID_FILE));
+
+        var dotIndex = findDotIndex(originalFileName);
+        var name = getFileName(originalFileName, dotIndex);
+        var extension = getExtension(originalFileName, dotIndex);
+        var path = uploadFile(file);
+
+        return File.builder()
+                .name(name)
+                .extension(extension)
+                .type(type)
+                .size(file.getSize())
+                .createdAt(ZonedDateTime.now())
+                .userUuid(userUuid)
+                .path(path)
+                .build();
+    }
+
+    private int findDotIndex(String originalFilename) {
+        var dotIndex = originalFilename.lastIndexOf(".");
+        if (dotIndex <= 0 || dotIndex == originalFilename.length() - 1) {
+            throw new BadRequestException(INVALID_FILE);
+        }
+        return dotIndex;
+    }
+
+    private String getFileName(String originalFilename, int dotIndex) {
+        var name = originalFilename.substring(0, dotIndex);
+        if (name.isBlank()) {
+            throw new BadRequestException(INVALID_FILE);
+        }
+        return name;
+    }
+
+    private String getExtension(String originalFilename, int dotIndex) {
+        var extension = originalFilename.substring(dotIndex);
+        if (extension.isBlank() || extension.length() == 1) {
+            throw new BadRequestException(INVALID_FILE);
+        }
+        return extension;
+    }
+
+    private String uploadFile(MultipartFile file) {
+        var path = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        InputStream inputStream;
+        try {
+            inputStream = file.getInputStream();
+            minioClient.putObject(PutObjectArgs.builder()
+                    .stream(inputStream, file.getSize(), -1)
+                    .bucket(minioProperty.getBucket())
+                    .object(path)
+                    .contentType(file.getContentType())
+                    .build());
+        } catch (Exception e) {
+            throw new InternalServerException("Ошибка загрузки файла", e);
+        }
+        return path;
+    }
+
 }

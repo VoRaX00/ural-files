@@ -22,6 +22,10 @@
             <groupId>ural</groupId>
             <artifactId>ural-api-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ural</groupId>
+            <artifactId>ural-files-starter</artifactId>
+        </dependency>
 
         <!--Other dependencies-->
         <dependency>

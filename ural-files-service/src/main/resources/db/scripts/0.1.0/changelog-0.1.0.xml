@@ -12,4 +12,34 @@
         </sql>
     </changeSet>
 
+    <changeSet id="create table files" author="kerzhakov">
+        <createTable tableName="files">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="extension" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_uuid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ"/>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>

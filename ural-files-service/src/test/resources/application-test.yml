@@ -1,26 +1,26 @@
 server:
-  port: ${SERVER_PORT}
+  port: 10907
   tomcat:
-    max-http-form-post-size: ${MAX_HTTP_FORM_POST_SIZE}
+    max-http-form-post-size: 10485760
 
 spring:
   application:
     name: ural-files
-    version: @project.version@
   datasource:
-    url: ${DB_URL}/${DB_NAME}
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    url: jdbc:postgresql://localhost:10900/ural
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         generate_statistics: false
-        show_sql: ${SHOW_SQL}
+        show_sql: true
         check_nullability: true
         hbm2ddl:
           auto: validate
+        default_schema: ural_files
   liquibase:
     enabled: true
     liquibase-schema: public
@@ -30,18 +30,18 @@ spring:
     default-schema: ural_files
   servlet:
     multipart:
-      max-file-size: ${MAX_FILE_SIZE}
-      max-request-size: ${MAX_REQUEST_SIZE}
+      max-file-size: 10MB
+      max-request-size: 100MB
 
 minio:
-  bucket: ${MINIO_BUCKET}
-  url: ${MINIO_URL}
-  access-key: ${MINIO_ACCESS_KEY}
-  secret-key: ${MINIO_SECRET_KEY}
+  bucket: files
+  url: http://localhost:9000
+  access-key: ural
+  secret-key: uralpass
 
 logging:
   level:
-    root: ${LOGGING_LEVEL_ROOT}
+    root: info
     org:
       springframework: INFO
       hibernate: INFO
