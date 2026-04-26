@@ -34,6 +34,10 @@ public class FileService {
 
     private static final String INVALID_FILE = "Не валидный файл";
 
+    private static final String INVALID_TYPE = "Не валидный тип файла";
+
+    private static final String ERROR_LOADING_FILE = "Ошибка загрузки файла";
+
     private final FileRepository fileRepository;
 
     private final MinioClient minioClient;
@@ -51,13 +55,13 @@ public class FileService {
         UserPrincipals user = JwtUtils.getUser(authentication);
 
         var entities = new ArrayList<File>();
-
         IntStream.range(0, files.size()).forEach(i -> {
             var file = files.get(i);
-            var fileType = types.get(i);
+            var fileType = Optional.of(types.get(i))
+                    .orElseThrow(() -> new BadRequestException(INVALID_TYPE));
 
             var entity = processFile(file, fileType, user.getUuid());
-            fileRepository.save(entity);
+            entities.add(entity);
         });
 
         return fileRepository.saveAll(entities);
@@ -109,19 +113,18 @@ public class FileService {
 
     private String uploadFile(MultipartFile file) {
         var path = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        InputStream inputStream;
-        try {
-            inputStream = file.getInputStream();
+        try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(PutObjectArgs.builder()
                     .stream(inputStream, file.getSize(), -1)
                     .bucket(minioProperty.getBucket())
                     .object(path)
                     .contentType(file.getContentType())
                     .build());
+
+            return path;
         } catch (Exception e) {
-            throw new InternalServerException("Ошибка загрузки файла", e);
+            throw new InternalServerException(ERROR_LOADING_FILE, e);
         }
-        return path;
     }
 
 }
