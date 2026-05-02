@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ural.files.api.FileApi;
 import ru.ural.files.common.enums.FileType;
+import ru.ural.files.dto.AvatarRequest;
+import ru.ural.files.dto.AvatarResponse;
 import ru.ural.files.dto.FileDto;
 import ru.ural.files.mappers.FileMapper;
 import ru.ural.files.services.FileService;
@@ -29,6 +31,11 @@ public class FileController implements FileApi {
     @Override
     public ResponseEntity<List<FileDto>> getFiles(List<Long> ids) {
         return ResponseEntity.ok(fileService.getFiles(ids));
+    }
+
+    @Override
+    public ResponseEntity<AvatarResponse> uploadAvatar(MultipartFile file, AvatarRequest metadata) {
+        return ResponseEntity.ok(fileService.uploadAvatar(file, metadata));
     }
 
 }

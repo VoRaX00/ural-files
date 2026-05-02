@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ural.files.common.enums.FileType;
+import ru.ural.files.dto.AvatarRequest;
 import ru.ural.files.dto.FileDto;
 import java.util.List;
 
@@ -24,5 +26,11 @@ public interface FileApi {
 
     @GetMapping
     ResponseEntity<List<FileDto>> getFiles(@RequestParam List<Long> ids);
+
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<?> uploadAvatar(
+            @RequestPart("file") MultipartFile file,
+            @RequestPart("metadata") AvatarRequest metadata
+    );
 
 }
