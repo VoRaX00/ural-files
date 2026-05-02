@@ -17,4 +17,6 @@ public class FileDto {
 
     private String extension;
 
+    private String url;
+
 }

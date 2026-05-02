@@ -26,4 +26,9 @@ public class FileController implements FileApi {
         return ResponseEntity.ok(fileMapper.toDto(savedFiles));
     }
 
+    @Override
+    public ResponseEntity<List<FileDto>> getFiles(List<Long> ids) {
+        return ResponseEntity.ok(fileService.getFiles(ids));
+    }
+
 }

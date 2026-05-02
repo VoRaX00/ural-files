@@ -1,7 +1,9 @@
 package ru.ural.files.services;
 
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -11,7 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.ural.exceptions.BadRequestException;
 import ru.ural.exceptions.InternalServerException;
 import ru.ural.files.common.enums.FileType;
+import ru.ural.files.dto.FileDto;
 import ru.ural.files.entities.File;
+import ru.ural.files.mappers.FileMapper;
 import ru.ural.files.properties.MinioProperty;
 import ru.ural.files.repositories.FileRepository;
 import ru.ural.models.UserPrincipals;
@@ -43,6 +47,35 @@ public class FileService {
     private final MinioClient minioClient;
 
     private final MinioProperty minioProperty;
+
+    private final FileMapper fileMapper;
+
+    public List<FileDto> getFiles(List<Long> ids) {
+        List<File> files = fileRepository.findAllById(ids);
+        return files.stream()
+                .map(file -> {
+                    String url = getFileUrl(file);
+                    FileDto dto = fileMapper.toDto(file);
+                    dto.setUrl(url);
+                    return dto;
+                })
+                .toList();
+    }
+
+    public String getFileUrl(File file) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(minioProperty.getBucket())
+                            .object(file.getPath())
+                            .expiry(60 * 60)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new InternalServerException("Ошибка генерации ссылки", e);
+        }
+    }
 
     // TODO: оптимизировать процесс сохранения файлов в S3
     @Transactional

@@ -3,6 +3,7 @@ package ru.ural.files.api;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,5 +21,8 @@ public interface FileApi {
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("types") List<FileType> types
     );
+
+    @GetMapping
+    ResponseEntity<List<FileDto>> getFiles(@RequestParam List<Long> ids);
 
 }
